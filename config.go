@@ -49,6 +49,11 @@ func From(c interface{}) (Config, error) {
 
   conf := make(Config)
   for k, v := range sm {
+    if nil == v {
+      conf[k] = v
+      continue
+    }
+
     t := reflect.TypeOf(v)
     switch t.Kind() {
     case reflect.Map:
