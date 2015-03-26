@@ -46,7 +46,7 @@ func HasGlobalConfig(code string) bool {
 
 func SetGlobalByFile(code, filename, ftype string) (Config, error) {
   conf, err := FromFile(filename, ftype)
-  if nil != err {
+  if nil == err {
     SetGlobalConfig(code, conf)
   }
   return conf, err
