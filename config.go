@@ -236,7 +236,7 @@ func (conf Config) SetPath(fullpath []string, value interface{}) Config {
         isArray = isArrayChain(path[i+1])
       }
 
-      if it, ok := curConf[key]; !ok || nil == it {
+      if it, ok := curConf[key]; !ok || nil == it { // We have path key
         if isArray {
           newConf := make(ConfigArr, 0)
           curConf[key] = newConf.SetPath(fullpath[i:], value)
@@ -247,7 +247,7 @@ func (conf Config) SetPath(fullpath []string, value interface{}) Config {
           curConf = newConf
         }
         continue
-      } else {
+      } else { // It`s something eles
         switch a := it.(type) {
         case ConfigArr:
           if isArray {
@@ -285,9 +285,26 @@ func (conf Config) SetPath(fullpath []string, value interface{}) Config {
   return conf
 }
 
-///////////////////////////////////////////////////////////////////////////////
-/// Convertion
-///////////////////////////////////////////////////////////////////////////////
+func (conf Config) Update(conf2 Config) Config {
+  if nil != conf2 {
+    for k, v := range conf2 {
+      conf[k] = v
+    }
+  }
+  return conf
+}
+
+func (conf Config) UpdateByPath(path string) Config {
+  conf2, _ := conf.Get(path)
+  if nil != conf2 {
+    switch conf2.(type) {
+    case Config:
+      return conf.Update(conf2.(Config))
+      break
+    }
+  }
+  return conf
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Processing
@@ -297,7 +314,6 @@ func (conf Config) prepare(escLeft, escRight string) {
   escLeft = escapeEx.ReplaceAllString(escLeft, `\$1`)
   escRight = escapeEx.ReplaceAllString(escRight, `\$1`)
   r := regexp.MustCompile(fmt.Sprintf(`%s([\w\.\d+*$]+)%s`, escLeft, escRight))
-
   prepare(conf, conf, r)
 }
 
