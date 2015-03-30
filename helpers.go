@@ -37,10 +37,10 @@ func prepareValueForSet(value interface{}) interface{} {
   t := reflect.TypeOf(value)
   switch t.Kind() {
   case reflect.Map:
-    value, _ = From(value)
+    value, _ = FromQuick(value)
     break
   case reflect.Slice:
-    value, _ = FromSlice(value)
+    value, _ = FromSliceQuick(value)
     break
   }
   return value

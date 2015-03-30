@@ -27,17 +27,31 @@ package config
 import (
   "encoding/json"
   "encoding/xml"
+  "fmt"
   "gopkg.in/v1/yaml"
   "io/ioutil"
   "reflect"
+  "regexp"
   "strings"
 
   "github.com/demdxx/gocast"
 )
 
+var (
+  escapeEx = regexp.MustCompile(`\{\}\*\+\(\)\[\]`)
+)
+
 type Config map[string]interface{}
 
 func From(c interface{}) (Config, error) {
+  conf, err := FromQuick(c)
+  if nil != conf {
+    conf.prepare("{{", "}}")
+  }
+  return conf, err
+}
+
+func FromQuick(c interface{}) (Config, error) {
   if nil == c {
     return make(Config), nil
   }
@@ -57,17 +71,16 @@ func From(c interface{}) (Config, error) {
     t := reflect.TypeOf(v)
     switch t.Kind() {
     case reflect.Map:
-      conf[k], _ = From(v)
+      conf[k], _ = FromQuick(v)
       break
     case reflect.Slice:
-      conf[k], _ = FromSlice(v)
+      conf[k], _ = FromSliceQuick(v)
       break
     default:
       conf[k] = v
       break
     }
   }
-  conf.prepare("{{", "}}")
   return conf, nil
 }
 
@@ -281,13 +294,53 @@ func (conf Config) SetPath(fullpath []string, value interface{}) Config {
 ///////////////////////////////////////////////////////////////////////////////
 
 func (conf Config) prepare(escLeft, escRight string) {
-  prepare(conf, escLeft, escRight)
+  escLeft = escapeEx.ReplaceAllString(escLeft, `\$1`)
+  escRight = escapeEx.ReplaceAllString(escRight, `\$1`)
+  r := regexp.MustCompile(fmt.Sprintf(`%s([\w\.\d+*$]+)%s`, escLeft, escRight))
+
+  prepare(conf, conf, r)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Helpers
 ///////////////////////////////////////////////////////////////////////////////
 
-func prepare(conf Config, escLeft, escRight string) {
+func prepare(root, conf Config, r *regexp.Regexp) {
+  if nil == conf || len(conf) < 1 {
+    return
+  }
 
+  for k, v := range conf {
+    if V := prepareItem(root, v, r); nil != V {
+      conf[k] = V
+    }
+  }
+}
+
+func prepareArray(root Config, a ConfigArr, r *regexp.Regexp) {
+  if nil == a || len(a) < 1 {
+    return
+  }
+  for i, it := range a {
+    if V := prepareItem(root, it, r); nil != V {
+      a[i] = V
+    }
+  }
+}
+
+func prepareItem(root Config, it interface{}, r *regexp.Regexp) interface{} {
+  switch s := it.(type) {
+  case string:
+    return r.ReplaceAllStringFunc(s, func(s string) string {
+      return fmt.Sprintf("%v", root.GetDefault(s[2:len(s)-2], ""))
+    })
+    break
+  case Config:
+    prepare(root, s, r)
+    break
+  case ConfigArr:
+    prepareArray(root, s, r)
+    break
+  }
+  return nil
 }

@@ -34,7 +34,7 @@ import (
 
 type ConfigArr []interface{}
 
-func FromSlice(c interface{}) (ConfigArr, error) {
+func FromSliceQuick(c interface{}) (ConfigArr, error) {
   if nil == c {
     return make(ConfigArr, 0), nil
   }
@@ -44,11 +44,11 @@ func FromSlice(c interface{}) (ConfigArr, error) {
     t := reflect.TypeOf(v)
     switch t.Kind() {
     case reflect.Map:
-      nc, _ := From(v)
+      nc, _ := FromQuick(v)
       conf = append(conf, nc)
       break
     case reflect.Slice:
-      nc, _ := FromSlice(v)
+      nc, _ := FromSliceQuick(v)
       conf = append(conf, nc)
       break
     default:
