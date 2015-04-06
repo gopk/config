@@ -284,7 +284,25 @@ func (conf Config) SetPath(fullpath []string, value interface{}) Config {
 func (conf Config) Update(conf2 Config) Config {
   if nil != conf2 {
     for k, v := range conf2 {
-      conf[k] = v
+      if v2, ok := conf[k]; ok {
+        switch c := v2.(type) {
+        case Config:
+          switch nv := v.(type) {
+          case Config:
+            c.Update(nv)
+            break
+          default:
+            conf[k] = v
+            break
+          }
+          break
+        default:
+          conf[k] = v
+          break
+        }
+      } else {
+        conf[k] = v
+      }
     }
   }
   return conf
@@ -300,6 +318,18 @@ func (conf Config) UpdateByPath(path string) Config {
     }
   }
   return conf
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/// Conversion
+///////////////////////////////////////////////////////////////////////////////
+
+func (conf Config) JSON() ([]byte, error) {
+  return json.Marshal(conf)
+}
+
+func (conf Config) JSONPrettify() ([]byte, error) {
+  return json.MarshalIndent(conf, "", "\t")
 }
 
 ///////////////////////////////////////////////////////////////////////////////
