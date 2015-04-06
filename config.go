@@ -44,11 +44,7 @@ var (
 type Config map[string]interface{}
 
 func From(c interface{}) (Config, error) {
-  conf, err := FromQuick(c)
-  if nil != conf {
-    conf.prepare("{{", "}}")
-  }
-  return conf, err
+  return FromQuick(c)
 }
 
 func FromQuick(c interface{}) (Config, error) {
@@ -310,7 +306,7 @@ func (conf Config) UpdateByPath(path string) Config {
 /// Processing
 ///////////////////////////////////////////////////////////////////////////////
 
-func (conf Config) prepare(escLeft, escRight string) {
+func (conf Config) Prepare(escLeft, escRight string) {
   escLeft = escapeEx.ReplaceAllString(escLeft, `\$1`)
   escRight = escapeEx.ReplaceAllString(escRight, `\$1`)
   r := regexp.MustCompile(fmt.Sprintf(`%s([\w\.\d+*$]+)%s`, escLeft, escRight))
