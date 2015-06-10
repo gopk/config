@@ -52,7 +52,7 @@ func FromQuick(c interface{}) (Config, error) {
     return make(Config), nil
   }
 
-  sm, err := gocast.ToSiMap(c, "field")
+  sm, err := gocast.ToSiMap(c, "field", true)
   if nil != err {
     return nil, err
   }
